@@ -1,0 +1,19 @@
+{
+  "name": "fis3-preprocessor-html-inline",
+  "version": "0.0.1",
+  "description": "简易html资源动态引入，支持参数替换变量",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mudoo/fis3-preprocessor-html-inline.git"
+  },
+  "keywords": [
+    "fis",
+    "fis3",
+    "html"
+    "inline",
+    "dynamic"
+  ],
+  "author": "fis",
+  "license": "MIT"
+}
