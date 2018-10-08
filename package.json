@@ -1,7 +1,7 @@
 {
   "name": "fis3-preprocessor-html-inline",
-  "version": "0.0.1",
-  "description": "简易html资源动态引入，支持参数替换变量",
+  "version": "0.0.2",
+  "description": "简易html资源动态引入，支持参数替换变量，支持自定义模板渲染引擎",
   "main": "index.js",
   "repository": {
     "type": "git",
