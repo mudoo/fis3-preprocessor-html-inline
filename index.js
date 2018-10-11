@@ -55,7 +55,7 @@ function parseQuery(query) {
 		let param = item.split('=')
 		if(!param[0]) return
 
-		param[1] = decodeURIComponent(param[1])
+		param[1] = param[1] ? decodeURIComponent(param[1]) : ''
 		const aryMatch = param[0].match(paramAryReg)
 		if (aryMatch) {
 			if (typeof params[aryMatch[1]] == 'undefined') {
@@ -86,7 +86,7 @@ function parseParam(params, file, target) {
 	delete params['__inline']
 
 	// __inline=data.json|{"test": 123}
-	if(inlineValue) {
+	if(inlineValue && inlineValue!='true') {
 		// 尝试解析JSON
 		if(rJSON.test(inlineValue)) {
 			let tmpData
