@@ -134,7 +134,8 @@ function compileSimple(target, content, data, options) {
 	var rContent = new RegExp(regStr, 'g')
 
 	return content.replace(rContent, (m, key, path) => {
-		let val = new Function(`return this['${key}']${path ? path : ''}`).apply(data),
+		// let val = new Function(`return this['${key}']${path ? path : ''}`).apply(data),
+		let val = eval(`data['${key}']${path ? path : ''}`)
 		def = options.removeEmpty ? '' : m
 
 		return val ? val : def
