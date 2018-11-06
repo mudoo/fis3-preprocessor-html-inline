@@ -1,15 +1,15 @@
 {
   "name": "fis3-preprocessor-html-inline",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "简易html资源动态引入，支持参数替换变量，支持自定义模板渲染引擎",
   "author": "mudoo <mudoo@qq.com>",
-  "main": "index.js",
+  "main": "lib/index.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/mudoo/fis3-preprocessor-html-inline.git"
   },
   "files": [
-    "index.js"
+    "lib"
   ],
   "keywords": [
     "fis",

@@ -28,7 +28,9 @@ fis.match('*.html', {
 		compile(target, tpl, data) {
 			const id = target.moduleId
 			if(!template.cache[id] || !target.useCache || template.cache[id + '.cache']!= target.cache.timestamp) {
-				template.cache[id] = template.compile(tpl)
+				template.compile(tpl, {
+					filename: id
+				})
 				template.cache[id + '.cache'] = target.useCache ? target.cache.timestamp : +new Date()
 			}
 
