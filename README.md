@@ -1,5 +1,4 @@
-fis3-preprocessor-html-inline
-===============
+## 介绍
 简易html资源动态引入处理，支持引入参数替换变量，支持自定义模板渲染引擎
 
 ## 使用
@@ -63,7 +62,24 @@ user: 东东,丽丽
 user0: 东东
 ```
 
-> 暂时只支持标准参数、数组参数
+参数支持如下（由loader-utils修改而来）：
+```
+                             -> Error
+?                            -> {}
+?flag                        -> { flag: "" }
+?+flag                       -> { flag: true }
+?-flag                       -> { flag: false }
+?xyz=test                    -> { xyz: "test" }
+?xyz=1                       -> { xyz: "1" } // numbers are NOT parsed
+?flag1&flag2                 -> { flag1: "", flag2: "" }
+?+flag1&-flag2               -> { flag1: true, flag2: false }
+?flag1=true&flag2=false      -> { flag1: true, flag2: false }
+?xyz[]=a                     -> { xyz: ["a"] }
+?xyz[]=a&xyz[]=b             -> { xyz: ["a", "b"] }
+?xyz[]=a&xyz[]=b&xyz[3]=d    -> { xyz: ["a", "b", , "d"] }
+?a%2C%26b=c%2C%26d           -> { "a,&b": "c,&d" }
+?{data:{a:1},isJSON5:true}   -> { data: { a: 1 }, isJSON5: true }
+```
 
 ### __inline载入变量
 index.html

@@ -1,4 +1,6 @@
-const extend = require('extend')
+const extend = require('extend'),
+	parseQuery = require('./parseQuery')
+
 const reg = /<!--\s*inline\[([^\]]+)\]\s*-->|<!--([\s\S]*?)-->|<link\s+([\s\S]*?["'\s\w\/\-])(?:>|$)/ig,
 	rRel = /\srel\s*=\s*('[^']+'|"[^"]+"|[^\s\/>]+)/i,
 	rHref = /(\s(?:data-)?href\s*=\s*)('[^']+'|"[^"]+"|[^\s\/>]+)/i,
@@ -6,7 +8,6 @@ const reg = /<!--\s*inline\[([^\]]+)\]\s*-->|<!--([\s\S]*?)-->|<link\s+([\s\S]*?
 	rLinkEnd = /\/(?=>$)/,
 	rLinkAttr = /\s+(?:charset|href|data-href|hreflang|rel|rev|sizes|target)\s*=\s*(?:'[^']+'|"[^"]+"|[^\s\/>]+)/ig,
 	rRegCover = /([$*+.?\\^|()[\]{}])/g,
-	rJSON = /^[{[\]]/,
 	rJSONFile = /\.json$/;
 
 /**
@@ -35,79 +36,23 @@ function addDeps(a, b) {
 }
 
 /**
- * url参数转换为Object
+ * 读取json文件
  *
- * @description 只支持正常参数、数组参数，如：?test=123&opts[0]=a&opts[1]=b
- *
- * @param {String} query 需要解析的query
- * @returns {Object}
- */
-const paramAryReg = /(.*?)\[(\d+)\]/;
-function parseQuery(query) {
-	let params = {}
-
-	if(!query) return params
-
-	query = query.substring(query.indexOf('?') + 1)
-	const queryAry = query.split('&')
-
-	queryAry.forEach(item => {
-		let param = item.split('=')
-		if(!param[0]) return
-
-		param[1] = param[1] ? decodeURIComponent(param[1]) : ''
-		const aryMatch = param[0].match(paramAryReg)
-		if (aryMatch) {
-			if (typeof params[aryMatch[1]] == 'undefined') {
-				params[aryMatch[1]] = []
-			}
-			params[aryMatch[1]][aryMatch[2]] = param[1]
-		} else {
-			let curParam = params[param[0]]
-			params[param[0]] = (curParam ? curParam+',' : '') + param[1]
-		}
-	})
-
-	return params
-}
-
-/**
- * 解析参数
- *
- * @param {Object} params 待处理参数，__inline参数可携带JSON对象、json文件路径
+ * @param {Object} params query参数，只处理__inline为json文件路径情况
  * @param {fis.FILE} file 当前文件对象，用于查找json文件
  * @param {fis.FILE} target 目标文件对象，用于查找json文件
  * @returns {Object}
  */
-function parseParam(params, file, target) {
+function readJsonFile(params, file, target) {
 	let inlineData = {},
 		inlineValue = params['__inline'];
 
 	delete params['__inline']
-
-	// __inline=data.json|{"test": 123}
-	if(inlineValue && inlineValue!='true') {
-		// 尝试解析JSON
-		if(rJSON.test(inlineValue)) {
-			let tmpData
-			// try {
-				// tmpData = JSON.parse(inlineValue)
-			// }catch(e) {
-				// JSON解析失败，尝试使用function返回
-				try {
-					tmpData = new Function(`return ${inlineValue}`)()
-				}catch(e){
-					// 并不是个JSON
-				}
-			// }
-			if(typeof tmpData=='object' && tmpData) {
-				inlineData = tmpData
-			}
-		}else if(rJSONFile.test(inlineValue)) {
-			// 尝试从当前文件下、目标文件下查找json文件数据源
-			// NOTE: 使用lookup api，会触发hook-node_modules文件查找
-			// let jsonFile = fis.project.lookup(inlineValue, file).file || fis.project.lookup(inlineValue, target).file
-			// let jsonFile = fis.uri(inlineValue, target ? target.dirname : fis.getProjectPath());
+	if(inlineValue) {
+		if(typeof inlineValue=='object') {
+			inlineData = inlineValue
+		}else if(typeof inlineValue=='string' && rJSONFile.test(inlineValue)) {
+		// 尝试从当前文件下、目标文件下查找json文件数据源
 			let jsonFile = fis.uri(inlineValue, file.dirname).file || fis.uri(inlineValue, target.dirname).file;
 			if(jsonFile) {
 				inlineData = fis.util.readJSON(jsonFile.realpath)
@@ -135,8 +80,8 @@ function compileSimple(target, content, data, options) {
 
 	return content.replace(rContent, (m, key, path) => {
 		// let val = new Function(`return this['${key}']${path ? path : ''}`).apply(data),
-		let val = eval(`data['${key}']${path ? path : ''}`)
-		def = options.removeEmpty ? '' : m
+		let val = eval(`data['${key}']${path ? path : ''}`),
+			def = options.removeEmpty ? '' : m
 
 		return val ? val : def
 	})
@@ -182,15 +127,17 @@ module.exports = function(content, file, options) {
 		}
 
 		// 解析参数，无__inline参数值，且无任何其他参数，不处理
-		const query = parseQuery(fis.util.query(path).query)
+		const pathQuery = fis.util.query(path).query
+		if(!pathQuery) return m
+		const query = parseQuery(pathQuery)
 		if(Object.keys(query).length<=1 && !query['__inline']) return m
 
 		// 获取目标文件对象
 		const target = fis.project.lookup(path, file).file;
 		if(!target || !target.isFile() || !target.isText()) return m
 
-		// 解析参数
-		const params = parseParam(query, file, target)
+		// 尝试读取json文件
+		const params = readJsonFile(query, file, target)
 
 		// 先编译目标文件（fis.match配置的编译）、加入依赖表
 		fis.compile(target);
